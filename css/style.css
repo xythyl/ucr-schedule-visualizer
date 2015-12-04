@@ -214,16 +214,29 @@ only screen and (max-width: 400px) {
     .jumbotron .lead {
         font-size: 18px;
     }
-    .jumbotron img {
-        max-width: 320px;
+    .table-space {
+        overflow-x: scroll;
+        white-space: nowrap;
+    }
+    .popover {
+        display: inline-block;
+    }
+    .popover-title {
+        display: inline-block;
+        overflow: hidden;
+        white-space: nowrap;
+    }
+    .popover-content {
+        display: inline-block;
+        overflow: scroll;
+        white-space: nowrap;
     }
     .alert {
         font-size: 13px;
-        margin: 0 0 0 0;
     }
     .btn {
         width: 100%;
-        margin: 0 0 10px 0;
+        margin: 0 0 30px 0;
     }
     nav {
         padding: 10px 0;
