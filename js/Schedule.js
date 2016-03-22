@@ -7,11 +7,44 @@
  *
  * @author Bradley
  */
-function Schedule(courseList) {
+function Schedule(courseList, noShowList) {
     this.courseList = courseList;
     this.hourList = -1;
     this.canvas = document.createElement('canvas');
-    this.tableString = -1;
+    this.tableString = "";
+
+    /**
+     * Pushes errors to the noShowList array. This function is specifically for displaying the error when a course overlaps another one.
+     * Requires that there are acually errors to display.
+     *
+     * @param course - course that doesn't fit in
+     * @param conflictingCourses - Set of courses that conflict with "course"
+     */
+    this.createErrorList = function(course, conflictingCourses) {
+        var conflictingCoursesString = ""; // String to hold the conflicting courses "english, CS, and physics"
+        var setIter = conflictingCourses.values(); // Set iterator
+        var oneAfterIter = conflictingCourses.values();
+        oneAfterIter.next();
+        var currentValue;
+
+        noShowList[0].push(course);
+
+        currentValue = setIter.next();
+        while (oneAfterIter.next().done !== true) {
+            conflictingCoursesString += currentValue.value.name + " (" + currentValue.value.nameID + ")" + ", ";
+            currentValue = setIter.next();
+        }
+
+        if (conflictingCourses.size == 1) {
+            var conflictedCourse = currentValue.value;
+            conflictingCoursesString += conflictedCourse.name + " (" + conflictedCourse.nameID + ")";
+        }
+        else {
+            conflictingCoursesString += "and " + currentValue.value.name + " (" + currentValue.value.nameID + ")";
+        }
+
+        noShowList[1].push("overlaps with " + conflictingCoursesString + ".");
+    };
 
     /**
      * Creates a 2D array whose rows are time in 30 minute blocks and columns days of the week.
@@ -22,7 +55,10 @@ function Schedule(courseList) {
      * @return hourList - A 2D array hour list
      */
     this.createHourList = function() {
-        var hasConflict = false;
+        var currentCourse;
+        var currentSpot;
+        var conflictingCourses = new Set();
+        var conflicted = false;
         //Initialize a 2-D array. Each item within the array is an array.
         this.hourList = new Array(32);
         for (var i = 0; i < 32; i++) {
@@ -30,28 +66,30 @@ function Schedule(courseList) {
         }
 
         for (var c = 0; c < this.courseList.length; c++) { //for each course
-            var courseAtI = this.courseList[c];
-            courseAtI.setIndex(c);
+            currentCourse = this.courseList[c];
+            currentCourse.setIndex(c);
 
-            for (var day = 0; day < courseAtI.days.length; day++) { //for each day of the week
-                if (courseAtI.days[day] === true) {
-                    //console.log(courseList[c].pos + " " + day);
-                    for (var b = 0; b < courseAtI.blocks; b++) {//for each block
-                        if (this.hourList[courseAtI.pos + b][day] === undefined) {
-                                this.hourList[courseAtI.pos + b][day] = this.courseList[c];
-                        }
-                        else {
-                            if (!hasConflict) {
-                                var conflictString = '<div class="container" id = "conflict"><p class = "alert alert-error"><strong>Two or more courses appear to be scheduled at the same time. You might want to check that over. </strong>';
+            for (var day = 0; day < currentCourse.days.length; day++) { //for each day of the week
+                if (currentCourse.days[day]) {
+                    for (var b = 0; b < currentCourse.blocks; b++) {//for each block
+                        currentSpot = this.hourList[currentCourse.pos + b][day]; // Get current spot in hourList
 
-                                $(".table-space").before(conflictString);
-                                hasConflict = true;
+                        if (currentSpot === undefined) { // Check if spot isn't already taken
+                            if(!conflicted) {
+                                this.hourList[currentCourse.pos + b][day] = this.courseList[c];
                             }
                         }
-
+                        else if (!conflicted) {
+                            conflictingCourses.add(currentSpot); // Add overlapping course to set
+                            conflicted = true;
+                        }
                     }
                 }
             }
+            if (conflictingCourses.size > 0) {
+                this.createErrorList(currentCourse, conflictingCourses);
+            }
+            conflicted = false;
         }
     };
 
@@ -74,6 +112,10 @@ function Schedule(courseList) {
             $('#reload').remove();
             $('#noShow').remove();
             $('#conflict').remove();
+
+            clearArray(courseList);
+            clearArray(noShowList[0]);
+            clearArray(noShowList[1]);
         });
 
         $("#imageDL").click(function() {
@@ -134,7 +176,7 @@ function Schedule(courseList) {
 
                 if (courseAtI !== undefined) {
 
-                    if (this.hourList[row - 2][col - 1] != courseAtI) {
+                    if (row === 1 || this.hourList[row - 2][col - 1] != courseAtI) {
                         if (courseAtI.bldg === "TBA" && courseAtI.room === "TBA") {
                             location = "TBA";
                         }
@@ -189,7 +231,7 @@ function Schedule(courseList) {
 
         //This creates the body of the table
         var hour = 0;
-        var popoutString = -1;
+        var popoutString = "";
         var location = -1;
         var courseAtI;
         for (var row = 0; row < 32; row++) { //for each tr/row (700 730 800 etc). 32 is the amount of rows. See blocks
@@ -216,7 +258,7 @@ function Schedule(courseList) {
 
                 //This displays the course info per course, instead of per block
                 if (courseAtI !== undefined) {
-                    if (this.hourList[row - 1][col] !== courseAtI) {
+                    if (row === 0 || this.hourList[row - 1][col] !== courseAtI) {
                         popoutString = "<td class='rspan' rowspan='" + courseAtI.blocks + "'>" +
                             "<a href='' onclick='return false;' " +
                             "class='course" + courseAtI.index + "'>\n";
