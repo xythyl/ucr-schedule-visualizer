@@ -64,7 +64,7 @@ function CourseParser(courseList, noShowList) {
                 else {
                     noShowList[0].push(new Course(quarter, course[1], course[2], course[3], course[4],
                         subCourse[1], 0, 0, 0, 0, subCourse[4], subCourse[5]));
-                    noShowList[1].push("didn't specify a time either because it's missing or the course is TBA.");
+                    noShowList[1].push("didn't specify a time either because it's missing or TBA.");
                 }
                 subCourse = this.subCourseRegex.exec(course[5]);
                 // Check if the course's duration is negative

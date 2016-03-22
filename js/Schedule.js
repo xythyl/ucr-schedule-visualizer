@@ -59,6 +59,9 @@ function Schedule(courseList, noShowList) {
         var currentSpot;
         var conflictingCourses = new Set();
         var conflicted = false;
+        var clear = true;
+        var b = 0; // Block counter
+
         //Initialize a 2-D array. Each item within the array is an array.
         this.hourList = new Array(32);
         for (var i = 0; i < 32; i++) {
@@ -71,19 +74,28 @@ function Schedule(courseList, noShowList) {
 
             for (var day = 0; day < currentCourse.days.length; day++) { //for each day of the week
                 if (currentCourse.days[day]) {
-                    for (var b = 0; b < currentCourse.blocks; b++) {//for each block
+                    b = 0;
+
+                    // First check if the location for placing the course is clear
+                    while ((clear) && (b < currentCourse.blocks)) {
                         currentSpot = this.hourList[currentCourse.pos + b][day]; // Get current spot in hourList
 
-                        if (currentSpot === undefined) { // Check if spot isn't already taken
-                            if(!conflicted) {
-                                this.hourList[currentCourse.pos + b][day] = this.courseList[c];
-                            }
-                        }
-                        else if (!conflicted) {
+                        if (currentSpot !== undefined) { // Check if spot isn't already taken
+                            clear = false;
                             conflictingCourses.add(currentSpot); // Add overlapping course to set
-                            conflicted = true;
+                        }
+
+                        b++;
+                    }
+
+                    // Then if it's clear, then actually put the course in
+                    if (clear) {
+                        for (b = 0; b < currentCourse.blocks; b++) {//for each block
+                            this.hourList[currentCourse.pos + b][day] = this.courseList[c];
                         }
                     }
+
+                    clear = true;
                 }
             }
             if (conflictingCourses.size > 0) {
